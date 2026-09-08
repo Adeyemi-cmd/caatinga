@@ -89,7 +89,7 @@ See [ADR 0002](./docs/adr/0002-local-artifacts-as-source-of-truth.md).
 ## Requirements
 
 - **Node.js** 22+
-- **[Stellar CLI](https://developers.stellar.org/docs/tools/developer-tools/cli/stellar-cli)** 23.0.0+ on `PATH` (27.0.0 recommended)
+- **[Stellar CLI](https://developers.stellar.org/docs/tools/developer-tools/cli/stellar-cli)** 23.0.0+ on `PATH` (28.0.0 recommended)
 - **Rust** 1.91.0+ with the `wasm32v1-none` target
 - A funded local Stellar CLI identity (e.g. `alice`)
 

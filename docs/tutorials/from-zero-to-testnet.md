@@ -26,7 +26,7 @@ Expected shape:
 Caatinga Doctor
 
 ✓ Node.js 22
-✓ Stellar CLI 27.0.0
+✓ Stellar CLI 28.0.0
 ✓ Rust 1.91.0
 ✓ wasm32v1-none target installed
 ✓ caatinga.config.ts found
