@@ -125,7 +125,7 @@ Detalhe completo: `docs/stellar-cli-version-contract.md`.
 
 - Node.js 22+
 - Stellar CLI 23.0.0+ no PATH (27.0.0 recomendado)
-- Rust 1.84.0+ com target `wasm32v1-none`
+- Rust 1.91.0+ com target `wasm32v1-none`
 - Identidade local financiada na CLI Stellar (ex.: `alice`)
 
 ---

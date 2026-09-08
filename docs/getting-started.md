@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js 22+
-- Rust 1.84.0+ with the `wasm32v1-none` target
+- Rust 1.91.0+ with the `wasm32v1-none` target
 - Stellar CLI 23.0.0+ (27.0.0 recommended)
 - A local Stellar CLI identity for deploy/invoke (e.g. `alice`)
 - Optional: Freighter or Stellar Wallets Kit for browser `@caatinga/client` calls

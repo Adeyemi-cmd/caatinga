@@ -413,8 +413,8 @@ describe("createProjectFromTemplate", () => {
     );
 
     expect(config).toContain("target/wasm32v1-none/release/counter.wasm");
-    expect(cargoToml).toContain('soroban-sdk = "22.0.1"');
-    expect(cargoToml).toContain('soroban-sdk = { version = "22.0.1", features = ["testutils"] }');
+    expect(cargoToml).toContain('soroban-sdk = "27.0.6"');
+    expect(cargoToml).toContain('soroban-sdk = { version = "27.0.6", features = ["testutils"] }');
   });
 
   it("ships zk-starter with a minimal vite-react frontend", async () => {
