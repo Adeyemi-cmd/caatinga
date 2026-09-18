@@ -11,6 +11,7 @@ import { resolveDeployArgs, type DeployArgValue } from "./resolve-deploy-args.js
 import { assertSafeSourceAccount } from "./source-account.js";
 import { resolveContract } from "./resolve-contract.js";
 import { resolveWasmArtifactPath } from "./wasm.js";
+import { TRANSACTION_TIMEOUT_MS } from "../shell/command-timeouts.js";
 
 export type DeployCostEstimate = {
   contractName: string;
@@ -95,6 +96,7 @@ export async function estimateDeployCost(
     const buildResult = await runCommand("stellar", deployArgs, {
       cwd,
       failureCode: CaatingaErrorCode.ESTIMATE_FAILED,
+      timeout: TRANSACTION_TIMEOUT_MS,
     });
     buildOutput = (buildResult.stdout || buildResult.all).trim();
   } catch (error) {
@@ -117,6 +119,7 @@ export async function estimateDeployCost(
     const simulateResult = await runCommand("stellar", simulateArgs, {
       cwd,
       failureCode: CaatingaErrorCode.ESTIMATE_FAILED,
+      timeout: TRANSACTION_TIMEOUT_MS,
     });
     simulateOutput = simulateResult.all || `${simulateResult.stdout}\n${simulateResult.stderr}`;
   } catch (error) {

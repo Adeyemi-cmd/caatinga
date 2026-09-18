@@ -15,6 +15,7 @@ export {
   CaatingaArtifactsSchema,
   type CaatingaArtifacts,
   type ContractArtifact,
+  type ContractMetadata,
 } from "./artifacts/artifact.schema.js";
 export { readArtifacts } from "./artifacts/read-artifacts.js";
 export {
@@ -53,8 +54,15 @@ export {
 
 export { WELL_KNOWN_NETWORKS } from "./networks/networks.js";
 export { resolveNetwork, type ResolvedNetwork } from "./networks/resolve-network.js";
+export { isMainnetNetwork, requiresMainnetConfirmation } from "./networks/mainnet-guardrails.js";
 
 export { runCommand, type RunCommandResult } from "./shell/run-command.js";
+export {
+  VERSION_PROBE_TIMEOUT_MS,
+  REGISTRY_TIMEOUT_MS,
+  BINDINGS_TIMEOUT_MS,
+  TRANSACTION_TIMEOUT_MS,
+} from "./shell/command-timeouts.js";
 export { resolveSubprocessEnv, isCargoBinMissingFromPath } from "./shell/resolve-subprocess-env.js";
 export { checkBinary } from "./shell/check-binary.js";
 export { parseContractId } from "./stellar-cli/parse-contract-id.js";
@@ -130,7 +138,6 @@ export {
   resolveCliMethodArgs,
   parseNamedCliArgs,
   looksLikeStellarAlias,
-  STELLAR_ADDRESS_REGEX,
   type ResolveMethodArgsOptions,
 } from "./contracts/resolve-method-args.js";
 export { resolveSourceAddress } from "./contracts/resolve-source-address.js";
@@ -205,7 +212,6 @@ export {
   readContract,
   buildReadCallHint,
   isReadCallFailure,
-  READ_CALL_FAILURE_REGEX,
   type ReadContractOptions,
 } from "./contracts/read-contract.js";
 export {

@@ -45,7 +45,7 @@ function createClientConfig(overrides: Record<string, unknown> = {}) {
             networkPassphrase: "Test SDF Network ; September 2015",
             address: "GPUBLIC",
           });
-          return { txHash: `hash:${signed.signedTxXdr}`, result: 1 };
+          return { txHash: `hash:${signed.signedTxXdr}`, result: 1, status: "SUCCESS" };
         },
       };
     }
@@ -110,6 +110,40 @@ function createClientConfig(overrides: Record<string, unknown> = {}) {
         },
         async signAndSend() {
           throw new Error("rpc rejected");
+        },
+      };
+    }
+
+    failedLifecycle() {
+      return {
+        toXDR() {
+          return "AAAA_FAILED_UNSIGNED";
+        },
+        async signAndSend(input: { signTransaction: (xdr: string) => Promise<unknown> }) {
+          await input.signTransaction("AAAA_FAILED_UNSIGNED");
+          return {
+            sendTransactionResponse: { hash: "hash:failed", status: "PENDING" },
+            getTransactionResponse: {
+              status: "FAILED",
+              resultXdr: "AAAA_RESULT",
+              diagnosticEvents: [{ type: "contract" }],
+            },
+          };
+        },
+      };
+    }
+
+    pendingLifecycle() {
+      return {
+        toXDR() {
+          return "AAAA_PENDING_UNSIGNED";
+        },
+        async signAndSend(input: { signTransaction: (xdr: string) => Promise<unknown> }) {
+          await input.signTransaction("AAAA_PENDING_UNSIGNED");
+          return {
+            sendTransactionResponse: { hash: "hash:pending", status: "PENDING" },
+            getTransactionResponse: { status: "NOT_FOUND" },
+          };
         },
       };
     }
@@ -285,6 +319,30 @@ describe("CaatingaContractClient (via createCaatingaClient)", () => {
     });
   });
 
+  it("should_report_failed_on_chain_transactions_with_diagnostics", async () => {
+    const result = await createCaatingaClient(createClientConfig())
+      .contract("counter")
+      .invoke("failedLifecycle");
+
+    expect(result).toMatchObject({
+      status: "failed",
+      transactionHash: "hash:failed",
+      resultXdr: "AAAA_RESULT",
+      diagnosticEvents: [{ type: "contract" }],
+    });
+  });
+
+  it("should_report_pending_when_transaction_status_is_unresolved", async () => {
+    const result = await createCaatingaClient(createClientConfig())
+      .contract("counter")
+      .invoke("pendingLifecycle");
+
+    expect(result).toMatchObject({
+      status: "pending",
+      transactionHash: "hash:pending",
+    });
+  });
+
   it("should_throw_XDR_SIGN_FAILED_when_signTransaction_returns_empty_string", async () => {
     const config = createClientConfig({
       wallet: {
@@ -325,6 +383,73 @@ describe("CaatingaContractClient (via createCaatingaClient)", () => {
     });
   });
 
+  it("should_submit_the_prepared_transaction_returned_by_build_xdr", async () => {
+    const originalSignAndSend = vi.fn(async () => {
+      throw new Error("submitted original transaction");
+    });
+    const preparedSignAndSend = vi.fn(
+      async (input: {
+        signTransaction: (
+          xdr: string,
+          opts?: { networkPassphrase?: string; address?: string }
+        ) => Promise<{ signedTxXdr: string }>;
+      }) => {
+        const signed = await input.signTransaction("AAAA_PREPARED", {
+          networkPassphrase: "Test SDF Network ; September 2015",
+          address: "GPUBLIC",
+        });
+        return { txHash: `hash:${signed.signedTxXdr}`, result: 11, status: "SUCCESS" };
+      }
+    );
+    const prepare = vi.fn(async () => ({
+      toXDR() {
+        return "AAAA_PREPARED";
+      },
+      signAndSend: preparedSignAndSend,
+    }));
+
+    class Client {
+      increment() {
+        return {
+          toXDR() {
+            return "AAAA_UNSIGNED";
+          },
+          prepare,
+          signAndSend: originalSignAndSend,
+        };
+      }
+    }
+
+    const config = createClientConfig({
+      contracts: {
+        counter: {
+          binding: { Client },
+        },
+      },
+    });
+
+    const result = await createCaatingaClient(config).contract("counter").invoke("increment", {
+      debugXdr: true,
+    });
+
+    expect(prepare).toHaveBeenCalledOnce();
+    expect(originalSignAndSend).not.toHaveBeenCalled();
+    expect(preparedSignAndSend).toHaveBeenCalledOnce();
+    expect(config.wallet.signTransaction).toHaveBeenCalledWith({
+      xdr: "AAAA_PREPARED",
+      networkPassphrase: "Test SDF Network ; September 2015",
+    });
+    expect(result).toMatchObject({
+      status: "confirmed",
+      transactionHash: "hash:AAAA_SIGNED",
+      result: 11,
+      xdr: {
+        unsigned: "AAAA_UNSIGNED",
+        prepared: "AAAA_PREPARED",
+        signed: "AAAA_SIGNED",
+      },
+    });
+  });
   it("should_submit_with_stellar_sdk_signAndSend_signTransaction_callback", async () => {
     const signAndSend = vi.fn(
       async (input: {
@@ -337,7 +462,7 @@ describe("CaatingaContractClient (via createCaatingaClient)", () => {
           networkPassphrase: "Test SDF Network ; September 2015",
           address: "GPUBLIC",
         });
-        return { txHash: `hash:${signed.signedTxXdr}`, result: 7 };
+        return { txHash: `hash:${signed.signedTxXdr}`, result: 7, status: "SUCCESS" };
       }
     );
 
@@ -397,7 +522,11 @@ describe("CaatingaContractClient (via createCaatingaClient)", () => {
           networkPassphrase: "Test SDF Network ; September 2015",
           address: "GPUBLIC",
         });
-        return { sendTransactionResponse: { hash: "hash:nested" }, result: 9 };
+        return {
+          sendTransactionResponse: { hash: "hash:nested" },
+          getTransactionResponse: { status: "SUCCESS" },
+          result: 9,
+        };
       }
     );
 
@@ -430,7 +559,7 @@ describe("CaatingaContractClient (via createCaatingaClient)", () => {
   });
 
   it("should_fallback_to_send_when_signAndSend_is_not_available", async () => {
-    const send = vi.fn(async () => ({ txHash: "hash:send", result: 3 }));
+    const send = vi.fn(async () => ({ txHash: "hash:send", result: 3, status: "SUCCESS" }));
 
     class Client {
       increment() {

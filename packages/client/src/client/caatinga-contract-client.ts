@@ -40,7 +40,7 @@ export class CaatingaContractClient {
     const { args, debugRaw } = splitArgsAndOptions(argsOrOptions, maybeOptions);
     const { contractId, transaction } = await this.createTransaction(method, args);
 
-    return buildTransactionXdr({
+    const xdr = await buildTransactionXdr({
       contractName: this.contractName,
       method,
       contractId,
@@ -48,6 +48,9 @@ export class CaatingaContractClient {
       rpcUrl: this.config.network.rpcUrl,
       debug: debugRaw,
     });
+    delete (xdr as { preparedTransaction?: unknown }).preparedTransaction;
+
+    return xdr;
   }
 
   async invoke<T = unknown>(
@@ -101,7 +104,7 @@ export class CaatingaContractClient {
     };
 
     const raw = await submitTransaction(
-      transaction,
+      xdr.preparedTransaction,
       signTransaction,
       this.contractName,
       method,
@@ -109,7 +112,7 @@ export class CaatingaContractClient {
     );
 
     if (
-      typeof (transaction as SubmitTransactionLike).signAndSend === "function" &&
+      typeof (xdr.preparedTransaction as SubmitTransactionLike).signAndSend === "function" &&
       signedXdr === undefined
     ) {
       throw new CaatingaError(
@@ -122,12 +125,16 @@ export class CaatingaContractClient {
     const normalized = normalizeSubmitResult<T>(raw);
 
     return {
-      status: "confirmed",
+      status: normalized.status,
       contract: this.contractName,
       method,
       contractId,
       ...(normalized.transactionHash ? { transactionHash: normalized.transactionHash } : {}),
       ...(normalized.result !== undefined ? { result: normalized.result } : {}),
+      ...(normalized.resultXdr !== undefined ? { resultXdr: normalized.resultXdr } : {}),
+      ...(normalized.diagnosticEvents !== undefined
+        ? { diagnosticEvents: normalized.diagnosticEvents }
+        : {}),
       ...(debugXdr
         ? {
             xdr: {

@@ -8,10 +8,18 @@ vi.mock("./run-command.js", () => ({
 }));
 
 import { checkBinary } from "./check-binary.js";
+import { VERSION_PROBE_TIMEOUT_MS } from "./command-timeouts.js";
 
 describe("checkBinary", () => {
-  beforeEach(() => {
-    runCommand.mockReset();
+  it("skips the Stellar version gate because the real command validates it", async () => {
+    runCommand.mockResolvedValueOnce({ stdout: "stellar 25.2.0", stderr: "", all: "" });
+
+    await checkBinary("stellar", "hint");
+
+    expect(runCommand).toHaveBeenCalledWith("stellar", ["--version"], {
+      timeout: VERSION_PROBE_TIMEOUT_MS,
+      skipStellarVersionCheck: true,
+    });
   });
 
   it("should_throw_RUST_NOT_FOUND_when_rustc_is_missing", async () => {
@@ -22,46 +30,7 @@ describe("checkBinary", () => {
     });
 
     expect(runCommand).toHaveBeenCalledWith("rustc", ["--version"], {
-      skipStellarVersionCheck: undefined,
-    });
-  });
-
-  it("passes skipStellarVersionCheck: true when checking the stellar binary", async () => {
-    runCommand.mockResolvedValueOnce({
-      stdout: "stellar 25.2.0",
-      stderr: "",
-      all: "stellar 25.2.0",
-    });
-
-    await checkBinary("stellar", "hint");
-
-    expect(runCommand).toHaveBeenCalledWith("stellar", ["--version"], {
-      skipStellarVersionCheck: true,
-    });
-  });
-
-  it("preserves explicit skipStellarVersionCheck for non-stellar binaries", async () => {
-    runCommand.mockResolvedValueOnce({ stdout: "rustc 1.85.0", stderr: "", all: "rustc 1.85.0" });
-
-    await checkBinary("rustc", "hint", { skipStellarVersionCheck: false });
-
-    expect(runCommand).toHaveBeenCalledWith("rustc", ["--version"], {
-      skipStellarVersionCheck: false,
-    });
-  });
-
-  it("ignores explicit skipStellarVersionCheck: false for stellar binary", async () => {
-    runCommand.mockResolvedValueOnce({
-      stdout: "stellar 25.2.0",
-      stderr: "",
-      all: "stellar 25.2.0",
-    });
-
-    await checkBinary("stellar", "hint", { skipStellarVersionCheck: false });
-
-    // Stellar always skips version check; explicit false is overridden.
-    expect(runCommand).toHaveBeenCalledWith("stellar", ["--version"], {
-      skipStellarVersionCheck: true,
+      timeout: VERSION_PROBE_TIMEOUT_MS,
     });
   });
 });
