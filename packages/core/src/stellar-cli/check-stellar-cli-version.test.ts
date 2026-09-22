@@ -14,7 +14,6 @@ describe("checkStellarCliVersion", () => {
   beforeEach(() => {
     vi.resetModules();
     runCommandMock.mockReset();
-    _clearStellarCliVersionCache();
   });
 
   async function loadCheckStellarCliVersion() {

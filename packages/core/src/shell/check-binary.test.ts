@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CaatingaErrorCode } from "../errors/CaatingaError.js";
 
 const runCommand = vi.hoisted(() => vi.fn());
