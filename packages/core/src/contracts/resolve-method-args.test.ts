@@ -111,4 +111,22 @@ describe("resolveMethodArgs", () => {
     const resolved = await resolveCliMethodArgs(["--name", "\\Dione"], { cwd: "/tmp" });
     expect(resolved).toEqual(["--name", "Dione"]);
   });
+
+  it("should_reject_flag_shaped_named_argument_values", async () => {
+    await expect(resolveCliMethodArgs(["--caller", "--help"])).rejects.toMatchObject({
+      code: CaatingaErrorCode.INVALID_CONFIG,
+    });
+  });
+
+  it("should_reject_invalid_named_argument_keys", async () => {
+    await expect(resolveCliMethodArgs(["--bad-key", "value"])).rejects.toMatchObject({
+      code: CaatingaErrorCode.INVALID_CONFIG,
+    });
+  });
+
+  it("should_reject_standalone_short_flags", async () => {
+    await expect(resolveCliMethodArgs(["-h"])).rejects.toMatchObject({
+      code: CaatingaErrorCode.INVALID_CONFIG,
+    });
+  });
 });

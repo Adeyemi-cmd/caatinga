@@ -1,7 +1,8 @@
 import { Command } from "commander";
-import { invokeContract, loadConfig } from "@caatinga/core";
+import { invokeContract, loadConfig, resolveNetwork } from "@caatinga/core";
 import { runCliAction } from "../utils/errors.js";
 import { logger } from "../utils/logger.js";
+import { confirmMainnetOperation } from "../utils/mainnet-guardrails.js";
 
 export function registerInvokeCommand(program: Command): void {
   program
@@ -18,6 +19,7 @@ export function registerInvokeCommand(program: Command): void {
       "--no-resolve-aliases",
       "Pass string args literally; skip CLI identity alias resolution"
     )
+    .option("-y, --yes", "Automatically confirm mainnet transactions without interactive prompt")
     .action(
       (
         target: string,
@@ -26,10 +28,22 @@ export function registerInvokeCommand(program: Command): void {
           network?: string;
           source: string;
           resolveAliases?: boolean;
+          yes?: boolean;
         }
       ) =>
         runCliAction(async () => {
           const config = await loadConfig();
+          const { name: networkName, config: networkConfig } = resolveNetwork(config, options.network);
+
+          await confirmMainnetOperation({
+            operation: "invoke",
+            networkName,
+            networkConfig,
+            target,
+            source: options.source,
+            yes: options.yes,
+          });
+
           const result = await invokeContract({
             config,
             target,

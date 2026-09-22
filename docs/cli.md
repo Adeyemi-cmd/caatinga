@@ -70,7 +70,25 @@ Strict flags:
 - `--strict-bindings` fails when bindings are not `fresh`
 - WASM drift and postDeploy alias advisories are **always advisory**
 
+Release channel:
+
+- Doctor compares the running CLI version against the published npm `dist-tags` for
+  `@caatinga/cli` and prints a `⚠` advisory when the running version is **ahead of the
+  `latest` tag** (for example a `next`-tagged pre-release, naming the tag when it matches)
+  or **behind it** (with the update command).
+- The check is best-effort and **always advisory** — it never blocks readiness. It is
+  skipped silently when npm or the registry is unavailable, times out after five seconds,
+  and can be disabled with `CAATINGA_SKIP_UPDATE_CHECK=1`.
+
 Use `--all-networks` for a per-network deploy/bindings matrix. Doctor may also print a version matrix including `soroban-sdk` from each contract's `Cargo.toml`.
+
+## `ctg version`
+
+Prints the installed CLI version (`@caatinga/cli: <version>`) and runs the same
+release-channel advisory as `ctg doctor`: a `⚠` note appears when the running version is
+ahead of the npm `latest` dist-tag (for example a `next`-tagged pre-release) or behind it.
+The registry lookup is best-effort and skippable with `CAATINGA_SKIP_UPDATE_CHECK=1`. The
+plain `-v`/`--version` flag stays offline and prints only the version.
 
 ## `ctg deploy`
 
@@ -270,7 +288,7 @@ When verification returns `false`, the CLI exits with `CAATINGA_ZK_VERIFICATION_
 
 ## Stellar CLI compatibility
 
-Caatinga rejects Stellar CLI versions below `23.0.0` because 22.x cannot sign `stellar contract invoke`. Versions newer than the last-tested `27.0.0` are accepted with a non-fatal stderr advisory and a `ctg doctor` warning. See [Stellar CLI Version Contract](./stellar-cli-version-contract.md).
+Caatinga rejects Stellar CLI versions below `23.0.0` because 22.x cannot sign `stellar contract invoke`. Versions newer than the last-tested `28.0.0` are accepted with a non-fatal stderr advisory and a `ctg doctor` warning. See [Stellar CLI Version Contract](./stellar-cli-version-contract.md).
 
 `ctg doctor` reports advisory warnings as a `(N warnings)` suffix on the relevant
 diagnostic line plus a `code: message` bullet for each one. Common codes are
